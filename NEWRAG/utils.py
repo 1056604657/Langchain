@@ -8,7 +8,6 @@ from file_processor_helper import FileProcessorHelper
 from bm25_retriever import *
 from pdf_parse import *
 
-
 def create_result_dict(code, msg=None, data=None):
     """s
     生成一个包含代码、消息和数据的字典，用于表示函数执行的结果。
@@ -156,7 +155,11 @@ def build_context(qdrant, collection_names, question_vector, top_n):
 
     return context
 
+# 全局变量用于存储处理后的数据
+processed_data = []
+
 def build_chat_document_prompt(file_paths, user_input, chat_history, top_n):
+    global processed_data
     try:
         logger.debug(
             f"file_paths: {file_paths}, user_input: {user_input},  top_n: {top_n}")
@@ -174,8 +177,6 @@ def build_chat_document_prompt(file_paths, user_input, chat_history, top_n):
             collection_names = qdrant.list_all_collection_names()
             logger.debug(f"未上传文件，Qdrant中已存在collection_names: {collection_names}")
 
-
-
         gpt = AssistantGPT()
         question_vectors = retry(gpt.get_embeddings, args=([user_input]))
         if not question_vectors:
@@ -184,46 +185,50 @@ def build_chat_document_prompt(file_paths, user_input, chat_history, top_n):
         question_vector = question_vectors[0]
 
         top_n = int(top_n)
-        context = build_context(   
+        context = build_context(
             qdrant,
             collection_names,
             question_vector,
             top_n)
         logger.trace(f"context: \n{context}")
 
-        print("utils文件中build_chat_document_prompt函数里面file_pathsi内容：", file_paths) 
-        data=[]
-        for file_path in file_paths: #多文档上传后的解析示例['C:\\Users\\86156\\AppData\\Local\\Temp\\gradio\\65bb12cdbc11b7cf86dc3d7b5d23d44db89bb438\\sample-pdf.pdf', 'C:\\Users\\86156\\AppData\\Local\\Temp\\gradio\\a38be22e6d2eb1d3ce9e80b706cfdee9700bd7ec\\sample-pdf2.pdf']
+        print("utils文件中build_chat_document_prompt函数里面file_pathsi内容：", file_paths)
 
-            dp = DataProcess(pdf_path=file_path)  #pdf分块处理
-            dp.ParseBlock(max_seq=1024)
-            dp.ParseBlock(max_seq=512)
-            dp.ParseAllPage(max_seq=256)
-            dp.ParseAllPage(max_seq=512)
-            dp.ParseOnePageWithRule(max_seq=256)
-            dp.ParseOnePageWithRule(max_seq=512)
-            # data = dp.data  # data为一整本的内容，列表类型data{list:8785}，很长很长
-            # data.append(data)  #千万不要这样用，data 列表的内容附加到了自身，而不是将 dp.data 的内容附加到 data 列表中。导致循环引用，最终使得 data 中只有最后一个 dp.data 的内容。
-            data.extend(dp.data)  #这一块很逻辑绕，多思考
-        #print("utils文件中build_chat_document_prompt函数里面data内容：", data)  
-        if data!=[]: 
-            print("=================================切分pdf文件完毕============================")
-        else: print("NO")
-        print("type(data)", type(data)) 
-        #print("data",data) 
-        bm25 = BM25(data)   
-        res = bm25.GetBM25TopK(query=user_input, topk=2) 
+        # 处理文件并更新 processed_data
+        if not processed_data:  # 仅在 processed_data 为空时处理文件
+            data = []
+            for file_path in file_paths:
+                dp = DataProcess(pdf_path=file_path)
+                dp.ParseBlock(max_seq=1024)
+                dp.ParseBlock(max_seq=512)
+                dp.ParseAllPage(max_seq=256)
+                dp.ParseAllPage(max_seq=512)
+                dp.ParseOnePageWithRule(max_seq=256)
+                dp.ParseOnePageWithRule(max_seq=512)
+                data.extend(dp.data)
+            if data:
+                processed_data = data  # 更新全局变量
+                print("=================================切分pdf文件完毕============================")
+            else:
+                print("NO")
+        else:
+            print("使用已处理的数据")
+
+        print("type(processed_data)", type(processed_data))
+
+        bm25 = BM25(processed_data)
+        res = bm25.GetBM25TopK(query=user_input, topk=2)
         all_contents = [doc.page_content for doc in res]
         merged_content = '\n'.join(all_contents)
-        context1 = context + "===============================\n" + merged_content 
+        context1 = context + "===============================\n" + merged_content
 
         chat_history_str = ""
-        for chat in chat_history[:-1]:  
+        for chat in chat_history[:-1]:
             if chat[0]:
                 chat_history_str += f'user:{chat[0]}\n'
             if chat[1]:
                 chat_history_str += f'assistant:{chat[1]}\n'
-        chat_history_str = chat_history_str[:-1] 
+        chat_history_str = chat_history_str[:-1]
         logger.trace(f"chat_history_str: \n{chat_history_str}")
 
         prompt = f"""你是一个中文超低排放改造和评估专家，优先使用`文档内容`的内容来给出答案，如果不完整再结合你自己的知识补充。如果user的问题中没有提到哪个工厂，回答中就不要提到工厂的名字。
