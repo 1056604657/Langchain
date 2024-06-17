@@ -9,8 +9,8 @@ from file_processor_helper import FileProcessorHelper
 from loguru import logger
 from utils import build_chat_document_prompt, upload_files
 from utils import *
-logger.remove()  # 删去import logger之后自动产生的handler，不删除的话会出现重复输出的现象
-logger.add(sys.stderr, level="DEBUG")  # 调整日志输出级别: INFO|DEBUG|TRACE
+logger.remove() 
+logger.add(sys.stderr, level="DEBUG") 
 
 
 
@@ -117,6 +117,7 @@ def fn_chat(
         logger.trace(f"messages: {messages}")
 
         gpt = AssistantGPT()
+
         # bot_response = gpt.get_completion(
         #     messages, model, max_tokens, temperature, stream)
         # if stream:

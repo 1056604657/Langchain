@@ -114,14 +114,7 @@ class AssistantGPT:
             print(f"Request failed: {e}")
             return None
         
-    def get_completion4(self,messages: Union[str, List[Dict[str, str]]], stream=True):
-        client = Client("http://10.10.10.15:8000/")
-        result = client.predict(
-		    prompt_text=messages,
-		    api_name="/set_prompt",
-            stream=True
-        )
-        return result
+
     
 
         
