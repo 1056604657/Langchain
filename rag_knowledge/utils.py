@@ -9,6 +9,7 @@ from AssistantGPT import AssistantGPT
 from file_processor import FileProcessor
 from file_processor_helper import FileProcessorHelper
 from bm25_retriever import *
+from bm25_retriever_llama import *
 from pdf_parse import *
 from llama_index_utils import *
 from EngineToolsParam import EngineToolsParam
@@ -287,9 +288,9 @@ def build_chat_document_prompt(file_paths, user_input, chat_history, top_n):
             print("NO")
         print("type(data)", type(data))
         #print("data",data)
-        bm25 = BM25(data)
-        res = bm25.GetBM25TopK(query=user_input, topk=5)
-        all_contents = [doc.page_content for doc in res]
+        bm25 = BM25_Lama(documents=data, topk=5)
+        res = bm25.GetBM25TopK(query=user_input)
+        all_contents = [doc.text for doc in res]
         merged_content = '\n'.join(all_contents)
         context1 = context + "===============================\n" + merged_content
 
