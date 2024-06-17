@@ -193,7 +193,7 @@ def build_chat_document_prompt(file_paths, user_input, chat_history, top_n):
         logger.trace(f"context: \n{context}")
 
         print("utils文件中build_chat_document_prompt函数里面file_pathsi内容：", file_paths)
-
+        print("正在处理pdf文件==============================")
         # 处理文件并更新 processed_data
         if not processed_data:  # 仅在 processed_data 为空时处理文件
             data = []
@@ -231,7 +231,7 @@ def build_chat_document_prompt(file_paths, user_input, chat_history, top_n):
         chat_history_str = chat_history_str[:-1]
         logger.trace(f"chat_history_str: \n{chat_history_str}")
 
-        prompt = f"""你是一个中文超低排放改造和评估专家，优先使用`文档内容`的内容来给出答案，如果不完整再结合你自己的知识补充。如果user的问题中没有提到哪个工厂，回答中就不要提到工厂的名字。
+        prompt = f"""你是一个中文超低排放改造和评估专家，优先使用`文档内容`的内容来给出答案，如果不完整再结合你自己的知识补充。如果user的问题中没有提到哪个工厂，回答中就不要提到工厂的名字，用总结性的语句回答。
 
 文档内容：```
 {context1}```
