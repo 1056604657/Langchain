@@ -97,8 +97,8 @@ def fn_chat(
                     messages.append({"role": "assistant", "content": chat[1]})
     else:
         if not isinstance(uploaded_file_paths, list) or not uploaded_file_paths or '' in uploaded_file_paths:
-            gr.Warning("未上传文件")
-            return chat_history
+            gr.Warning("未上传文件，正在使用默认知识库")
+            uploaded_file_paths=['assets/宝钢湛江钢铁有限公司超低排放改造和评估监测进展情况公示内容－中国钢铁工业协会.pdf','assets/宝山钢铁股份有限公司（宝山基地）超低排放改造和评估监测进展情况公示内容－中国钢铁工业协会.pdf']
         user_prompt = build_chat_document_prompt(
             uploaded_file_paths, user_input, chat_history, top_n)
         if user_prompt:
